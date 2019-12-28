@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ChatClient</title>
+    <style>
+        .red {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chat Client <strong id="myId" class="red"></strong></h1>
+    <div id="rooms"></div>
+    <div>
+        <input type="text" id="roomId" value="room1">
+        <button onClick="joinRoom()">Join</button>
+    </div>
+    
+    <hr />
+
+    <div id="status" class="red"></div>
+
+    <div id="list">
+
+    </div>
+
+    <div>
+        <input type="text" id="msg" value="hi~">
+        <button id="btnSend" onClick="send()">Send</button>
+    </div>
+
+    <div>
+        <input type="text" id="socketId" value="">
+        <button id="btnSend" onClick="sendOne()">귓속말</button>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const square = 'square';
+        let joinedRoom = null;
+        const socket = io('http://localhost:8080?aaa=123');
+
+        socket.on('connect', () => {
+            console.log('connected');
+            makeJoin(square);
+            displayRooms();
+        });
+
+        socket.on('message', (data) => {
+            console.log('message>>', data);
+            let msg = data.msg;
+            let list = document.querySelector('#list');
+            let divEl = document.createElement('div');
+            divEl.innerHTML = `<strong>${msg}</strong>`;
+            list.append(divEl);
+            if (msg && msg.startsWith('Welcome ')) {
+                let myId = msg.substring(msg.lastIndexOf(' ') + 1);
+                document.querySelector('#myId').innerText = myId;
+            }
+        });
+
+        socket.on('disconnect', (data) => {
+            console.log('disconnected!!');
+            document.querySelector('#status').innerText = 'Disconnected';
+        });
+
+        const send = () => {
+            let msg = document.querySelector('#msg').value;
+            socket.emit('message', { room: joinedRoom, msg: msg }, (ret) => {
+                console.log('message.callback>>', ret);
+                let list = document.querySelector('#list');
+                let divEl = document.createElement('div');
+                divEl.innerHTML = `나: ${msg}`;
+                list.append(divEl);
+            });
+        };
+
+        const joinRoom = () => {
+            let roomId = document.querySelector('#roomId').value;
+            if (!roomId) {
+                return alert('Input the room-id to join!!');
+            }
+            console.log('joinRoom>>', roomId);
+            makeJoin(roomId);
+        };
+
+        const makeJoin = (roomId) => {
+            console.log('makeJoin>>', roomId);
+            socket.emit('leave', joinedRoom);
+            socket.emit('join', roomId, () => {
+                console.log('joinRoom>>', joinedRoom);
+                joinedRoom = roomId;
+                displayRooms();
+            });
+        };
+        
+        const displayRooms = () => {
+            socket.emit('rooms', (rooms) => {
+                console.log("rooms>>", rooms);
+                document.querySelector('#rooms').innerText = rooms;
+                document.querySelector('#status').innerText = 'Connected: ' + joinedRoom;
+            });
+        };
+
+        const sendOne = () => {
+            let socketId = document.querySelector('#socketId').value;
+            if (!socketId) return alert('Input the socketId!!');
+            let msg = document.querySelector('#msg').value;
+
+            let result = socket.emit('message-for-one', socketId, `귓속말: ${msg}`);
+            if (result) {
+                let list = document.querySelector('#list');
+                let divEl = document.createElement('div');
+                divEl.innerHTML = `[${socketId}]에게: ${msg}`;
+                list.append(divEl);
+            }
+        };
+    </script>
+</body>
+</html>
