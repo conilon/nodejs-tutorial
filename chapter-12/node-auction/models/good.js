@@ -6,11 +6,11 @@ module.exports = (sequelize, DataTypes) => {
         },
         img: {
             type: DataTypes.STRING(200),
-            allowNull: false,
+            allowNull: true,
         },
         price: {
             type: DataTypes.INTEGER,
-            allowNull: true,
+            allowNull: false,
             defaultValue: 0,
         },
     }, {

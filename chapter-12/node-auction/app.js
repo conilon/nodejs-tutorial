@@ -11,10 +11,14 @@ const indexRouter = require('./routes/index');
 const authRouter = require('./routes/auth');
 const { sequelize } = require('./models');
 const passportConfig = require('./passport');
+const sse = require('./sse');
+const webSocket = require('./socket');
+const checkAuction = require('./checkAuction');
 
 const app = express();
 sequelize.sync();
 passportConfig(passport);
+checkAuction();
 
 const sessionMiddleware = session({
     resave: false,
@@ -23,7 +27,7 @@ const sessionMiddleware = session({
     cookie: {
         httpOnly: true,
         secure: false,
-    }
+    },
 });
 
 app.set('views', path.join(__dirname, 'views'));
@@ -44,12 +48,6 @@ app.use(flash());
 app.use('/', indexRouter);
 app.use('/auth', authRouter);
 
-app.use((req, res, next) => {
-    const err = new Error('Not Found');
-    err.status = 404;
-    next(err);
-});
-
 app.use((err, req, res, next) => {
     res.locals.message = err.message;
     res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -57,6 +55,9 @@ app.use((err, req, res, next) => {
     res.render('error');
 });
 
-app.listen(app.get('port'), () => {
+const server = app.listen(app.get('port'), () => {
     console.log(app.get('port'), '번 포트에서 대기 중');
 });
+
+webSocket(server, app);
+sse(server);

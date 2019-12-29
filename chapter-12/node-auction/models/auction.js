@@ -11,6 +11,6 @@ module.exports = (sequelize, DataTypes) => {
         },
     }, {
         timestamps: true,
-        pananoid: true,
+        parnanoid: true,
     });
 };

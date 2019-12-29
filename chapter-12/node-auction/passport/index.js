@@ -8,8 +8,10 @@ module.exports = (passport) => {
 
     passport.deserializeUser(async (id, done) => {
         try {
-            const user = User.findOne({ where: { id } });
+            const user = await User.findOne({ where: { id } });
             if (user) {
+                done(null, user);
+            } else {
                 done(null, user);
             }
         } catch (error) {
